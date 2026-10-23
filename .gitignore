@@ -1,15 +1,22 @@
 # Dependencies
+node_modules/
 /node_modules/
+vendor/
 /vendor/
 
 # Environment files
 .env
 .env.backup
 .env.*
+*.env
 !.env.example
+!frontend/.env.example
+!backend/.env.example
 
 # Build outputs
+dist/
 /dist/
+build/
 /build/
 /public/build/
 /public/hot
@@ -41,5 +48,5 @@
 .DS_Store
 Thumbs.db
 
-# Existing projects in workspace
+# Other workspace folders
 /escom/
