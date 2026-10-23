@@ -28,4 +28,5 @@ PolicyFlow/
 
 ### Setup
 
-Detailed setup guides for backend API and frontend client will be added as services are scaffolded.
+- **Backend**: See [backend/README.md](backend/README.md) for XAMPP MySQL setup instructions, migration steps, and testing guide.
+- **Frontend**: Scaffolding scheduled in upcoming milestone.
