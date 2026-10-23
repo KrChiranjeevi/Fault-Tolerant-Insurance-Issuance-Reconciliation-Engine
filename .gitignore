@@ -1,0 +1,45 @@
+# Dependencies
+/node_modules/
+/vendor/
+
+# Environment files
+.env
+.env.backup
+.env.*
+!.env.example
+
+# Build outputs
+/dist/
+/build/
+/public/build/
+/public/hot
+
+# Laravel storage & generated files
+/storage/*.key
+/storage/logs/*
+!/storage/logs/.gitkeep
+/storage/framework/cache/*
+!/storage/framework/cache/.gitkeep
+/storage/framework/sessions/*
+!/storage/framework/sessions/.gitkeep
+/storage/framework/views/*
+!/storage/framework/views/.gitkeep
+/storage/framework/testing/*
+!/storage/framework/testing/.gitkeep
+
+# Testing & caches
+.phpunit.result.cache
+.phpunit.cache/
+
+# IDE & Editor artifacts
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Operating System files
+.DS_Store
+Thumbs.db
+
+# Existing projects in workspace
+/escom/
