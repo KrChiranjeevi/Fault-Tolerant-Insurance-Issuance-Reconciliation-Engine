@@ -1,0 +1,207 @@
+{
+  "info": {
+    "_postman_id": "7849e8a1-c918-4903-b09e-73199bc45120",
+    "name": "PolicyFlow API Collection",
+    "description": "Postman Collection for PolicyFlow: Fault-Tolerant Travel Insurance Issuance & Reconciliation Engine",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8000/api",
+      "type": "string"
+    },
+    {
+      "key": "policyId",
+      "value": "1",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "System Health & Status",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            }
+          }
+        },
+        {
+          "name": "Status Check",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["status"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Policy Requests (Lifecycle)",
+      "item": [
+        {
+          "name": "Intake Policy Request (Idempotent 201/200)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"client_request_id\": \"REQ-PM-001\",\n  \"agent_id\": \"AGT-ALPHA\",\n  \"customer_name\": \"Johnathan Smith\",\n  \"date_of_birth\": \"1992-06-15\",\n  \"destination\": \"SCHENGEN\",\n  \"trip_start\": \"2026-11-01\",\n  \"trip_end\": \"2026-11-10\",\n  \"plan_code\": \"GOLD\",\n  \"sum_insured\": 100000\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/policy-requests",
+              "host": ["{{baseUrl}}"],
+              "path": ["policy-requests"]
+            }
+          }
+        },
+        {
+          "name": "List Policy Requests (Paginated & Filtered)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/policy-requests?page=1&per_page=15&status=ALL",
+              "host": ["{{baseUrl}}"],
+              "path": ["policy-requests"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "per_page", "value": "15" },
+                { "key": "status", "value": "ALL" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Policy Details by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/policy-requests/{{policyId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["policy-requests", "{{policyId}}"]
+            }
+          }
+        },
+        {
+          "name": "Submit Policy - SUCCESS Scenario",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mock_scenario\": \"SUCCESS\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/policy-requests/{{policyId}}/submit",
+              "host": ["{{baseUrl}}"],
+              "path": ["policy-requests", "{{policyId}}", "submit"]
+            }
+          }
+        },
+        {
+          "name": "Submit Policy - TIMEOUT_AFTER_ISSUE Scenario",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mock_scenario\": \"TIMEOUT_AFTER_ISSUE\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/policy-requests/{{policyId}}/submit",
+              "host": ["{{baseUrl}}"],
+              "path": ["policy-requests", "{{policyId}}", "submit"]
+            }
+          }
+        },
+        {
+          "name": "Submit Policy - TEMPORARY_FAILURE Scenario",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mock_scenario\": \"TEMPORARY_FAILURE\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/policy-requests/{{policyId}}/submit",
+              "host": ["{{baseUrl}}"],
+              "path": ["policy-requests", "{{policyId}}", "submit"]
+            }
+          }
+        },
+        {
+          "name": "Reconcile Policy (TIMEOUT Recovery)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/policy-requests/{{policyId}}/reconcile",
+              "host": ["{{baseUrl}}"],
+              "path": ["policy-requests", "{{policyId}}", "reconcile"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Mock Insurer Webhooks",
+      "item": [
+        {
+          "name": "Inbound Insurer Callback (Idempotent Event)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"event_id\": \"evt_sample_98234\",\n  \"event_type\": \"POLICY_ISSUED\",\n  \"policy_number\": \"POL-20261024-ABC123\",\n  \"status\": \"ISSUED\",\n  \"provider_policy_id\": \"PRV-EXT-9982\",\n  \"issued_at\": \"2026-10-24T00:00:00Z\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/mock-insurer/callback",
+              "host": ["{{baseUrl}}"],
+              "path": ["mock-insurer", "callback"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
