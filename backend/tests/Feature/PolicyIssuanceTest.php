@@ -397,4 +397,34 @@ class PolicyIssuanceTest extends TestCase
         // Verify exactly 1 policy_requests record exists
         $this->assertDatabaseCount('policy_requests', 1);
     }
+
+    // ── 21. Assignment Document Exact Example Verification ───────────────────
+
+    public function test_assignment_docx_exact_example_intake_and_calculation(): void
+    {
+        $payload = [
+            'client_request_id' => 'AGT-2026-0001',
+            'agent_id'          => 'AGENT-17',
+            'customer_name'     => 'Sample Customer',
+            'date_of_birth'     => '1998-04-10',
+            'destination'       => 'INTERNATIONAL',
+            'trip_start'        => '2026-11-10',
+            'trip_end'          => '2026-11-14',
+            'plan_code'         => 'PLUS',
+            'sum_insured'       => 300000,
+        ];
+
+        // travel_days = 5, age multiplier = 1.00, premium = 20 * 5 * 1.00 * 1.80 * 1.25 = 225.00
+        $res = $this->postJson('/api/policy-requests', $payload);
+        $res->assertStatus(201)
+            ->assertJsonPath('data.status', PolicyStateService::RECEIVED)
+            ->assertJsonPath('data.premium_amount', '225.00');
+
+        $this->assertSame(5, $res->json('data.premium_snapshot.trip_days'));
+        $this->assertSame(28, $res->json('data.premium_snapshot.traveler_age'));
+        $this->assertSame('20.00', $res->json('data.premium_snapshot.rates_and_multipliers.base_daily_rate'));
+        $this->assertSame('1.80', $res->json('data.premium_snapshot.rates_and_multipliers.destination_multiplier'));
+        $this->assertSame('1.25', $res->json('data.premium_snapshot.rates_and_multipliers.coverage_multiplier'));
+        $this->assertSame('1.00', $res->json('data.premium_snapshot.rates_and_multipliers.age_multiplier'));
+    }
 }

@@ -11,6 +11,42 @@ class StorePolicyRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        $merge = [];
+
+        // Support both customer_name and insured_name
+        if (!$this->has('insured_name') && $this->has('customer_name')) {
+            $merge['insured_name'] = $this->input('customer_name');
+        } elseif ($this->has('insured_name') && !$this->has('customer_name')) {
+            $merge['customer_name'] = $this->input('insured_name');
+        }
+
+        // Support default email if not provided in intake
+        if (!$this->has('insured_email')) {
+            $nameSlug = strtolower(preg_replace('/[^a-zA-Z0-9]/', '', (string) ($this->input('customer_name') ?? $this->input('insured_name') ?? 'customer')));
+            $merge['insured_email'] = $nameSlug . '@policyflow.local';
+        }
+
+        // Support both plan and plan_code
+        if (!$this->has('plan') && $this->has('plan_code')) {
+            $merge['plan'] = $this->input('plan_code');
+        } elseif ($this->has('plan') && !$this->has('plan_code')) {
+            $merge['plan_code'] = $this->input('plan');
+        }
+
+        // Support both coverage_type and sum_insured
+        if (!$this->has('coverage_type') && $this->has('sum_insured')) {
+            $merge['coverage_type'] = (string) $this->input('sum_insured');
+        } elseif ($this->has('coverage_type') && !$this->has('sum_insured')) {
+            $merge['sum_insured'] = $this->input('coverage_type');
+        }
+
+        if (!empty($merge)) {
+            $this->merge($merge);
+        }
+    }
+
     public function rules(): array
     {
         return [
@@ -20,7 +56,8 @@ class StorePolicyRequest extends FormRequest
 
             // Insured details
             'insured_name'      => 'required|string|max:255',
-            'insured_email'     => 'required|email|max:255',
+            'customer_name'     => 'nullable|string|max:255',
+            'insured_email'     => 'nullable|email|max:255',
             'date_of_birth'     => 'required|date_format:Y-m-d',
 
             // Trip details
@@ -30,7 +67,9 @@ class StorePolicyRequest extends FormRequest
 
             // Plan / coverage
             'plan'              => 'required|string|max:50',
+            'plan_code'         => 'nullable|string|max:50',
             'coverage_type'     => 'required|string|max:50',
+            'sum_insured'       => 'nullable',
             'currency'          => 'nullable|string|size:3',
 
             // Optional metadata passthrough
