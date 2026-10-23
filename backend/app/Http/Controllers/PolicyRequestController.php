@@ -196,6 +196,8 @@ class PolicyRequestController extends Controller
 
     private function formatPolicy(PolicyRequest $policy, bool $withRelations = false): array
     {
+        $sumInsured = is_numeric($policy->coverage_type) ? (int) $policy->coverage_type : $policy->coverage_type;
+
         $base = [
             'id'                => $policy->id,
             'policy_number'     => $policy->policy_number,
@@ -203,6 +205,7 @@ class PolicyRequestController extends Controller
             'agent_id'          => $policy->agent_id,
             'client_request_id' => $policy->client_request_id,
             'insured_name'      => $policy->insured_name,
+            'customer_name'     => $policy->insured_name,
             'insured_email'     => $policy->insured_email,
             'date_of_birth'     => $policy->date_of_birth?->toDateString(),
             'traveler_age'      => $policy->traveler_age,
@@ -211,7 +214,9 @@ class PolicyRequestController extends Controller
             'trip_end'          => $policy->trip_end?->toDateString(),
             'trip_days'         => $policy->trip_days,
             'plan'              => $policy->plan,
+            'plan_code'         => $policy->plan,
             'coverage_type'     => $policy->coverage_type,
+            'sum_insured'       => $sumInsured,
             'currency'          => $policy->currency,
             'premium_amount'    => $policy->premium_amount,
             'premium_snapshot'  => $policy->premium_snapshot,
@@ -239,13 +244,18 @@ class PolicyRequestController extends Controller
                 'processed_at'      => $e->processed_at?->toIso8601String(),
             ])->values();
 
-            $base['state_history'] = $policy->stateHistories->map(fn ($h) => [
-                'from_status'   => $h->from_status,
-                'to_status'     => $h->to_status,
-                'trigger_event' => $h->trigger_event,
-                'actor_type'    => $h->actor_type,
-                'created_at'    => $h->created_at?->toIso8601String(),
+            $stateHistories = $policy->stateHistories->map(fn ($h) => [
+                'id'              => $h->id,
+                'from_status'     => $h->from_status,
+                'to_status'       => $h->to_status,
+                'trigger_event'   => $h->trigger_event,
+                'actor_type'      => $h->actor_type,
+                'created_at'      => $h->created_at?->toIso8601String(),
+                'transitioned_at' => $h->created_at?->toIso8601String(),
             ])->values();
+
+            $base['state_history'] = $stateHistories;
+            $base['state_histories'] = $stateHistories;
         }
 
         return $base;

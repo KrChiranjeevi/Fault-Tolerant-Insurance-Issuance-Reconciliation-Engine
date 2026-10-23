@@ -13,7 +13,7 @@ return [
     | Default Currency
     |--------------------------------------------------------------------------
     */
-    'default_currency' => 'USD',
+    'default_currency' => 'INR',
 
     /*
     |--------------------------------------------------------------------------
@@ -23,19 +23,20 @@ return [
     'plans' => [
         'BASIC' => [
             'name' => 'Basic Protection',
-            'base_daily_rate' => '10.00',
+            'base_daily_rate' => '12.00',
         ],
         'PLUS' => [
             'name' => 'Plus Protection',
             'base_daily_rate' => '20.00',
         ],
+        'PREMIUM' => [
+            'name' => 'Premium Protection',
+            'base_daily_rate' => '30.00',
+        ],
+        // Retained for legacy test compatibility
         'STANDARD' => [
             'name' => 'Standard Protection',
             'base_daily_rate' => '15.00',
-        ],
-        'PREMIUM' => [
-            'name' => 'Premium Protection',
-            'base_daily_rate' => '25.00',
         ],
         'SILVER' => [
             'name' => 'Silver Protection',
@@ -65,6 +66,7 @@ return [
             'name' => 'International Travel',
             'multiplier' => '1.80',
         ],
+        // Retained for legacy test compatibility
         'ASIA' => [
             'name' => 'Asia Pacific',
             'multiplier' => '1.20',
@@ -93,6 +95,27 @@ return [
     |--------------------------------------------------------------------------
     */
     'coverages' => [
+        '100000' => [
+            'name' => '₹100,000 Coverage',
+            'multiplier' => '1.00',
+        ],
+        '300000' => [
+            'name' => '₹300,000 Coverage',
+            'multiplier' => '1.25',
+        ],
+        '500000' => [
+            'name' => '₹500,000 Coverage',
+            'multiplier' => '1.50',
+        ],
+        // Retained for legacy test compatibility
+        '50000' => [
+            'name' => '$50,000 Coverage',
+            'multiplier' => '1.00',
+        ],
+        '250000' => [
+            'name' => '$250,000 Coverage',
+            'multiplier' => '1.30',
+        ],
         'MEDICAL_ONLY' => [
             'name' => 'Medical Expenses Only',
             'multiplier' => '1.00',
@@ -103,27 +126,6 @@ return [
         ],
         'COMPREHENSIVE' => [
             'name' => 'All Inclusive Comprehensive Cover',
-            'multiplier' => '1.50',
-        ],
-        // Numerical sum_insured mappings
-        '50000' => [
-            'name' => '$50,000 Coverage',
-            'multiplier' => '1.00',
-        ],
-        '100000' => [
-            'name' => '$100,000 Coverage',
-            'multiplier' => '1.00',
-        ],
-        '250000' => [
-            'name' => '$250,000 Coverage',
-            'multiplier' => '1.30',
-        ],
-        '300000' => [
-            'name' => '$300,000 Coverage',
-            'multiplier' => '1.25',
-        ],
-        '500000' => [
-            'name' => '$500,000 Coverage',
             'multiplier' => '1.50',
         ],
     ],
@@ -137,38 +139,26 @@ return [
         '0_17' => [
             'min_age' => 0,
             'max_age' => 17,
-            'label' => '0-17 (Child)',
-            'multiplier' => '0.80',
+            'label' => '0-17',
+            'multiplier' => '1.10',
         ],
-        '18_35' => [
+        '18_60' => [
             'min_age' => 18,
-            'max_age' => 35,
-            'label' => '18-35 (Young Adult)',
+            'max_age' => 60,
+            'label' => '18-60',
             'multiplier' => '1.00',
         ],
-        '36_50' => [
-            'min_age' => 36,
-            'max_age' => 50,
-            'label' => '36-50 (Adult)',
-            'multiplier' => '1.20',
-        ],
-        '51_65' => [
-            'min_age' => 51,
-            'max_age' => 65,
-            'label' => '51-65 (Senior)',
+        '61_70' => [
+            'min_age' => 61,
+            'max_age' => 70,
+            'label' => '61-70',
             'multiplier' => '1.50',
         ],
-        '66_75' => [
-            'min_age' => 66,
-            'max_age' => 75,
-            'label' => '66-75 (Elderly)',
-            'multiplier' => '2.00',
-        ],
-        '76_plus' => [
-            'min_age' => 76,
+        '71_plus' => [
+            'min_age' => 71,
             'max_age' => 120,
-            'label' => '76+ (Super Senior)',
-            'multiplier' => '2.50',
+            'label' => '71+',
+            'multiplier' => '2.00',
         ],
     ],
 ];

@@ -36,6 +36,7 @@ class PricingServiceTest extends TestCase
             'date_of_birth' => '1996-01-01',
             'trip_start' => '2026-11-01',
             'trip_end' => '2026-11-05',
+            'currency' => 'USD',
         ]);
 
         $this->assertSame('168.75', $result['amount']);
@@ -55,22 +56,20 @@ class PricingServiceTest extends TestCase
     }
 
     /**
-     * Test all defined age bands produce the exact multipliers.
+     * Test all defined age bands produce the exact multipliers (Docx 4 tiers).
      */
     public function test_each_age_band_calculates_correct_multiplier(): void
     {
-        // Reference trip: 1 day, Basic Plan ($10), Domestic (1.0), Medical Only (1.0)
-        // Expected total = $10 * 1.0 * 1.0 * age_multiplier * 1 day
+        // Reference trip: 1 day, Basic Plan (₹12), Domestic (1.0), Medical Only (1.0)
+        // Expected total = ₹12 * 1.0 * 1.0 * age_multiplier * 1 day
         $tripStart = '2026-06-01';
         $tripEnd = '2026-06-01';
 
         $ageCases = [
-            ['dob' => '2016-06-01', 'expected_age' => 10, 'expected_mult' => '0.80', 'expected_amount' => '8.00'],
-            ['dob' => '2001-06-01', 'expected_age' => 25, 'expected_mult' => '1.00', 'expected_amount' => '10.00'],
-            ['dob' => '1986-06-01', 'expected_age' => 40, 'expected_mult' => '1.20', 'expected_amount' => '12.00'],
-            ['dob' => '1966-06-01', 'expected_age' => 60, 'expected_mult' => '1.50', 'expected_amount' => '15.00'],
-            ['dob' => '1956-06-01', 'expected_age' => 70, 'expected_mult' => '2.00', 'expected_amount' => '20.00'],
-            ['dob' => '1946-06-01', 'expected_age' => 80, 'expected_mult' => '2.50', 'expected_amount' => '25.00'],
+            ['dob' => '2016-06-01', 'expected_age' => 10, 'expected_mult' => '1.10', 'expected_amount' => '13.20'],
+            ['dob' => '2001-06-01', 'expected_age' => 25, 'expected_mult' => '1.00', 'expected_amount' => '12.00'],
+            ['dob' => '1961-06-01', 'expected_age' => 65, 'expected_mult' => '1.50', 'expected_amount' => '18.00'],
+            ['dob' => '1951-06-01', 'expected_age' => 75, 'expected_mult' => '2.00', 'expected_amount' => '24.00'],
         ];
 
         foreach ($ageCases as $case) {
@@ -81,6 +80,7 @@ class PricingServiceTest extends TestCase
                 'date_of_birth' => $case['dob'],
                 'trip_start' => $tripStart,
                 'trip_end' => $tripEnd,
+                'currency' => 'INR',
             ]);
 
             $this->assertSame($case['expected_age'], $result['traveler_age'], "Age mismatch for DOB {$case['dob']}");
@@ -101,10 +101,11 @@ class PricingServiceTest extends TestCase
             'date_of_birth' => '2000-01-01',
             'trip_start' => '2026-08-15',
             'trip_end' => '2026-08-15',
+            'currency' => 'INR',
         ]);
 
         $this->assertSame(1, $result['trip_days']);
-        $this->assertSame('10.00', $result['amount']);
+        $this->assertSame('12.00', $result['amount']);
     }
 
     /**
@@ -120,10 +121,11 @@ class PricingServiceTest extends TestCase
             'date_of_birth' => '2000-01-01',
             'trip_start' => '2026-06-01',
             'trip_end' => '2026-06-10',
+            'currency' => 'INR',
         ]);
 
         $this->assertSame(10, $result['trip_days']);
-        $this->assertSame('100.00', $result['amount']);
+        $this->assertSame('120.00', $result['amount']);
     }
 
     /**
@@ -131,36 +133,34 @@ class PricingServiceTest extends TestCase
      */
     public function test_age_calculated_at_trip_start(): void
     {
-        // Traveler born on 1991-06-15.
-        // Trip starts on 2026-06-14 -> Age is 34 (Band: 18-35, multiplier 1.00).
-        // Trip starts on 2026-06-15 -> Age is 35 (Band: 18-35, multiplier 1.00).
-        // Trip starts on 2026-06-16 -> Age is 35.
-        // Traveler born on 1990-06-15:
-        // Trip starts 2026-06-14 -> Age 35 (Band 18_35, multiplier 1.00)
-        // Trip starts 2026-06-15 -> Age 36 (Band 36_50, multiplier 1.20)
+        // Traveler born on 1965-06-15:
+        // Trip starts 2026-06-14 -> Age 60 (Band 18-60, multiplier 1.00)
+        // Trip starts 2026-06-15 -> Age 61 (Band 61-70, multiplier 1.50)
         $beforeBirthday = $this->pricingService->calculatePremium([
             'plan' => 'BASIC',
             'destination' => 'DOMESTIC',
             'coverage_type' => 'MEDICAL_ONLY',
-            'date_of_birth' => '1990-06-15',
+            'date_of_birth' => '1965-06-15',
             'trip_start' => '2026-06-14',
             'trip_end' => '2026-06-14',
+            'currency' => 'INR',
         ]);
 
-        $this->assertSame(35, $beforeBirthday['traveler_age']);
+        $this->assertSame(60, $beforeBirthday['traveler_age']);
         $this->assertSame('1.00', $beforeBirthday['snapshot']['rates_and_multipliers']['age_multiplier']);
 
         $onBirthday = $this->pricingService->calculatePremium([
             'plan' => 'BASIC',
             'destination' => 'DOMESTIC',
             'coverage_type' => 'MEDICAL_ONLY',
-            'date_of_birth' => '1990-06-15',
+            'date_of_birth' => '1965-06-15',
             'trip_start' => '2026-06-15',
             'trip_end' => '2026-06-15',
+            'currency' => 'INR',
         ]);
 
-        $this->assertSame(36, $onBirthday['traveler_age']);
-        $this->assertSame('1.20', $onBirthday['snapshot']['rates_and_multipliers']['age_multiplier']);
+        $this->assertSame(61, $onBirthday['traveler_age']);
+        $this->assertSame('1.50', $onBirthday['snapshot']['rates_and_multipliers']['age_multiplier']);
     }
 
     /**
@@ -253,21 +253,22 @@ class PricingServiceTest extends TestCase
      */
     public function test_decimal_safe_arithmetic_precision(): void
     {
-        // 3 days, Premium ($25.00) * Asia (1.20) * Standard Cover (1.25) * Senior (1.50)
-        // 25.00 * 1.20 = 30.00
-        // 30.00 * 1.25 = 37.50
-        // 37.50 * 1.50 = 56.25
-        // 56.25 * 3 days = 168.75
+        // 3 days, Premium (₹30.00) * International (1.80) * 300,000 Cover (1.25) * Senior age 65 (1.50)
+        // 30.00 * 1.80 = 54.00
+        // 54.00 * 1.25 = 67.50
+        // 67.50 * 1.50 = 101.25
+        // 101.25 * 3 days = 303.75
         $result = $this->pricingService->calculatePremium([
             'plan' => 'PREMIUM',
-            'destination' => 'ASIA',
-            'coverage_type' => 'STANDARD_COVER',
-            'date_of_birth' => '1968-01-01',
+            'destination' => 'INTERNATIONAL',
+            'coverage_type' => '300000',
+            'date_of_birth' => '1961-01-01',
             'trip_start' => '2026-09-01',
             'trip_end' => '2026-09-03',
+            'currency' => 'INR',
         ]);
 
-        $this->assertSame('168.75', $result['amount']);
-        $this->assertSame('56.25', $result['snapshot']['breakdown']['daily_premium']);
+        $this->assertSame('303.75', $result['amount']);
+        $this->assertSame('101.25', $result['snapshot']['breakdown']['daily_premium']);
     }
 }

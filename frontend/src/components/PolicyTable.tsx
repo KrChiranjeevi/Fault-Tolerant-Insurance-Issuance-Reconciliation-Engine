@@ -94,11 +94,11 @@ export const PolicyTable: React.FC<PolicyTableProps> = ({
                     </div>
                   </td>
                   <td className="py-3 px-3">
-                    <div className="font-medium">{p.customer_name}</div>
+                    <div className="font-medium">{p.customer_name || (p as any).insured_name}</div>
                     <div className="text-[11px] text-slate-400 font-mono">DOB: {p.date_of_birth}</div>
                   </td>
                   <td className="py-3 px-3">
-                    <span className="font-semibold text-blue-400">{p.plan_code}</span>
+                    <span className="font-semibold text-blue-400">{p.plan_code || (p as any).plan}</span>
                     <div className="text-[11px] text-slate-400">{p.destination}</div>
                   </td>
                   <td className="py-3 px-3 font-mono text-[11px]">
@@ -107,9 +107,11 @@ export const PolicyTable: React.FC<PolicyTableProps> = ({
                   </td>
                   <td className="py-3 px-3">
                     <div className="font-bold text-emerald-400 font-mono">
-                      ${Number(p.premium_amount).toFixed(2)}
+                      {p.currency === 'USD' ? '$' : '₹'}{Number(p.premium_amount).toFixed(2)}
                     </div>
-                    <div className="text-[10px] text-slate-400">Cover: ${(p.sum_insured / 1000).toFixed(0)}k</div>
+                    <div className="text-[10px] text-slate-400">
+                      Cover: {p.currency === 'USD' ? '$' : '₹'}{Number(p.sum_insured || (p as any).coverage_type || 0).toLocaleString('en-IN')}
+                    </div>
                   </td>
                   <td className="py-3 px-3">
                     <StatusBadge status={p.status} />

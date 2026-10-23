@@ -1,4 +1,4 @@
-import React, { useState, useId } from 'react';
+import React, { useState } from 'react';
 import { PolicyFormData } from '../types';
 import { createPolicy } from '../services/api';
 import { Calculator, Send, RefreshCw, CheckCircle2, AlertCircle } from 'lucide-react';
@@ -11,13 +11,13 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({ onPolicyCreated }) => {
   const [formData, setFormData] = useState<PolicyFormData>({
     client_request_id: 'REQ-' + Math.random().toString(36).substring(2, 9).toUpperCase(),
     agent_id: 'AGT-001',
-    customer_name: 'Jane Doe',
-    date_of_birth: '1995-04-12',
-    destination: 'SCHENGEN',
+    customer_name: 'Rahul Sharma',
+    date_of_birth: '1998-04-10',
+    destination: 'INTERNATIONAL',
     trip_start: new Date(Date.now() + 86400000 * 5).toISOString().split('T')[0],
     trip_end: new Date(Date.now() + 86400000 * 15).toISOString().split('T')[0],
-    plan_code: 'GOLD',
-    sum_insured: 100000,
+    plan_code: 'PLUS',
+    sum_insured: 300000,
   });
 
   const [loading, setLoading] = useState(false);
@@ -47,6 +47,26 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({ onPolicyCreated }) => {
   const tripDays = calculateDays();
   const travelerAge = calculateAge();
 
+  const getEstimatedQuote = () => {
+    const baseRates: Record<string, number> = { BASIC: 12, PLUS: 20, PREMIUM: 30 };
+    const destMults: Record<string, number> = { DOMESTIC: 1.0, INTERNATIONAL: 1.8 };
+    const covMults: Record<number, number> = { 100000: 1.0, 300000: 1.25, 500000: 1.5 };
+
+    const base = baseRates[formData.plan_code] || 20;
+    const dest = destMults[formData.destination] || 1.8;
+    const cov = covMults[formData.sum_insured] || 1.25;
+
+    let ageMult = 1.0;
+    if (travelerAge <= 17) ageMult = 1.1;
+    else if (travelerAge <= 60) ageMult = 1.0;
+    else if (travelerAge <= 70) ageMult = 1.5;
+    else ageMult = 2.0;
+
+    return tripDays * base * dest * cov * ageMult;
+  };
+
+  const estimatedTotal = getEstimatedQuote();
+
   const handleRegenerateId = () => {
     setFormData(prev => ({
       ...prev,
@@ -62,7 +82,7 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({ onPolicyCreated }) => {
 
     try {
       const res = await createPolicy(formData);
-      setSuccess(`Policy created successfully! ID: ${res.data.id} (${res.data.status})`);
+      setSuccess(`Policy created successfully! ID: #${res.data.id} (${res.data.status}) • Authoritative Premium: ₹${Number(res.data.premium_amount).toFixed(2)}`);
       onPolicyCreated();
       handleRegenerateId();
     } catch (err: any) {
@@ -159,11 +179,8 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({ onPolicyCreated }) => {
               onChange={e => setFormData({ ...formData, destination: e.target.value })}
               className="w-full bg-slate-900 border border-slate-700 rounded px-2.5 py-1.5 text-slate-100 focus:ring-1 focus:ring-blue-500"
             >
-              <option value="ASIA">Asia (Base 1.0x)</option>
-              <option value="EUROPE">Europe (1.2x)</option>
-              <option value="SCHENGEN">Schengen (1.25x)</option>
-              <option value="USA_CANADA">USA & Canada (1.5x)</option>
-              <option value="WORLDWIDE">Worldwide (1.6x)</option>
+              <option value="DOMESTIC">Domestic (1.00x)</option>
+              <option value="INTERNATIONAL">International (1.80x)</option>
             </select>
           </div>
 
@@ -174,9 +191,9 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({ onPolicyCreated }) => {
               onChange={e => setFormData({ ...formData, plan_code: e.target.value })}
               className="w-full bg-slate-900 border border-slate-700 rounded px-2.5 py-1.5 text-slate-100 focus:ring-1 focus:ring-blue-500"
             >
-              <option value="SILVER">Silver ($15/day)</option>
-              <option value="GOLD">Gold ($25/day)</option>
-              <option value="PLATINUM">Platinum ($40/day)</option>
+              <option value="BASIC">Basic (₹12/day)</option>
+              <option value="PLUS">Plus (₹20/day)</option>
+              <option value="PREMIUM">Premium (₹30/day)</option>
             </select>
           </div>
 
@@ -203,30 +220,32 @@ export const PolicyForm: React.FC<PolicyFormProps> = ({ onPolicyCreated }) => {
           </div>
 
           <div className="md:col-span-2">
-            <label className="block text-slate-300 font-medium mb-1">Sum Insured (USD)</label>
+            <label className="block text-slate-300 font-medium mb-1">Sum Insured (INR - ₹)</label>
             <select
               value={formData.sum_insured}
               onChange={e => setFormData({ ...formData, sum_insured: parseInt(e.target.value, 10) })}
               className="w-full bg-slate-900 border border-slate-700 rounded px-2.5 py-1.5 text-slate-100 focus:ring-1 focus:ring-blue-500"
             >
-              <option value={50000}>$50,000 (Base 1.0x)</option>
-              <option value={100000}>$100,000 (1.15x)</option>
-              <option value={250000}>$250,000 (1.30x)</option>
-              <option value={500000}>$500,000 (1.50x)</option>
+              <option value={100000}>₹100,000 (Base 1.00x)</option>
+              <option value={300000}>₹300,000 (1.25x)</option>
+              <option value={500000}>₹500,000 (1.50x)</option>
             </select>
           </div>
         </div>
 
         {/* Live quote preview */}
-        <div className="bg-slate-900/90 border border-slate-700/80 rounded-lg p-3 text-xs flex justify-between items-center">
+        <div className="bg-slate-900/90 border border-slate-700/80 rounded-lg p-3 text-xs flex flex-wrap justify-between items-center gap-2">
           <div>
             <span className="text-slate-400">Calculated Metrics: </span>
             <span className="text-blue-400 font-semibold">{tripDays} Days (Inclusive)</span>
             <span className="text-slate-500 mx-2">|</span>
             <span className="text-slate-400">Age: </span>
             <span className="text-blue-400 font-semibold">{travelerAge} yrs</span>
+            <span className="text-slate-500 mx-2">|</span>
+            <span className="text-slate-400">Est. Quote: </span>
+            <span className="text-emerald-400 font-bold">₹{estimatedTotal.toFixed(2)}</span>
           </div>
-          <span className="text-[11px] text-slate-500 italic">Backend serves authoritative immutable snapshot</span>
+          <span className="text-[11px] text-slate-500 italic">Authoritative snapshot on submit</span>
         </div>
 
         <button

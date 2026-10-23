@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { PolicyRequest } from './types';
-import { fetchPolicies, fetchPolicy } from './services/api';
+import { fetchPolicies, fetchPolicy, checkHealth } from './services/api';
 import { OverviewCards } from './components/OverviewCards';
 import { PolicyForm } from './components/PolicyForm';
 import { PolicyTable } from './components/PolicyTable';
@@ -21,8 +21,13 @@ export function App() {
       setPolicies(res.data || []);
       setApiConnected(true);
     } catch (err) {
-      console.error(err);
-      setApiConnected(false);
+      console.error('Fetch policies error:', err);
+      try {
+        const healthy = await checkHealth();
+        setApiConnected(healthy);
+      } catch {
+        setApiConnected(false);
+      }
     } finally {
       setLoading(false);
     }

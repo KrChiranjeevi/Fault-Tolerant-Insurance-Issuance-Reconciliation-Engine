@@ -113,15 +113,17 @@ export const PolicyDetailsModal: React.FC<PolicyDetailsModalProps> = ({
             </div>
             <div>
               <span className="text-slate-400 block text-[11px]">Customer Name</span>
-              <span className="font-semibold text-slate-100">{policy.customer_name}</span>
+              <span className="font-semibold text-slate-100">{policy.customer_name || (policy as any).insured_name}</span>
             </div>
             <div>
               <span className="text-slate-400 block text-[11px]">Plan & Destination</span>
-              <span className="font-semibold text-blue-400">{policy.plan_code}</span> / {policy.destination}
+              <span className="font-semibold text-blue-400">{policy.plan_code || (policy as any).plan}</span> / {policy.destination}
             </div>
             <div>
               <span className="text-slate-400 block text-[11px]">Coverage (Sum Insured)</span>
-              <span className="font-semibold text-slate-200">${Number(policy.sum_insured).toLocaleString()}</span>
+              <span className="font-semibold text-slate-200">
+                {policy.currency === 'USD' ? '$' : '₹'}{Number(policy.sum_insured || (policy as any).coverage_type || 0).toLocaleString('en-IN')}
+              </span>
             </div>
             <div>
               <span className="text-slate-400 block text-[11px]">Trip Dates</span>
@@ -130,7 +132,7 @@ export const PolicyDetailsModal: React.FC<PolicyDetailsModalProps> = ({
             <div>
               <span className="text-slate-400 block text-[11px]">Authoritative Premium</span>
               <span className="font-bold text-emerald-400 text-sm font-mono">
-                ${Number(policy.premium_amount).toFixed(2)} {policy.currency}
+                {policy.currency === 'USD' ? '$' : '₹'}{Number(policy.premium_amount).toFixed(2)} {policy.currency || 'INR'}
               </span>
             </div>
           </div>
@@ -148,16 +150,18 @@ export const PolicyDetailsModal: React.FC<PolicyDetailsModalProps> = ({
                 </div>
                 <div className="bg-slate-900/60 p-2 rounded border border-slate-800">
                   <span className="text-slate-400 block">Age at Trip Start</span>
-                  <span className="text-slate-200 font-bold">{policy.premium_snapshot.age_at_trip_start} yrs</span>
+                  <span className="text-slate-200 font-bold">{policy.premium_snapshot.age_at_trip_start ?? (policy.premium_snapshot as any).traveler_age} yrs</span>
                 </div>
                 <div className="bg-slate-900/60 p-2 rounded border border-slate-800">
                   <span className="text-slate-400 block">Base Daily Rate</span>
-                  <span className="text-slate-200">${policy.premium_snapshot.base_daily_rate}</span>
+                  <span className="text-slate-200 font-bold">
+                    {policy.currency === 'USD' ? '$' : '₹'}{(policy.premium_snapshot as any).rates_and_multipliers?.base_daily_rate ?? policy.premium_snapshot.base_daily_rate ?? '-'}
+                  </span>
                 </div>
                 <div className="bg-slate-900/60 p-2 rounded border border-slate-800">
                   <span className="text-slate-400 block">Multipliers (Age × Dest × Cov)</span>
                   <span className="text-slate-200">
-                    {policy.premium_snapshot.age_multiplier} × {policy.premium_snapshot.destination_multiplier} × {policy.premium_snapshot.coverage_multiplier}
+                    {(policy.premium_snapshot as any).rates_and_multipliers?.age_multiplier ?? policy.premium_snapshot.age_multiplier ?? '1.00'} × {(policy.premium_snapshot as any).rates_and_multipliers?.destination_multiplier ?? policy.premium_snapshot.destination_multiplier ?? '1.00'} × {(policy.premium_snapshot as any).rates_and_multipliers?.coverage_multiplier ?? policy.premium_snapshot.coverage_multiplier ?? '1.00'}
                   </span>
                 </div>
               </div>
@@ -262,14 +266,14 @@ export const PolicyDetailsModal: React.FC<PolicyDetailsModalProps> = ({
               <History className="w-4 h-4 text-blue-400" /> State Transition Audit Timeline
             </h4>
             <div className="border-l-2 border-slate-700 ml-2 pl-4 space-y-3">
-              {policy.state_histories?.map((h, i) => (
+              {(policy.state_histories || (policy as any).state_history)?.map((h: any, i: number) => (
                 <div key={i} className="relative text-[11px]">
                   <div className="absolute -left-[21px] top-1 w-2.5 h-2.5 rounded-full bg-blue-500 ring-4 ring-slate-900" />
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-slate-200 font-mono">
                       {h.from_status || 'INIT'} &rarr; {h.to_status}
                     </span>
-                    <span className="text-[10px] text-slate-500">{h.transitioned_at}</span>
+                    <span className="text-[10px] text-slate-500">{h.transitioned_at || h.created_at}</span>
                   </div>
                   <div className="text-slate-400 text-[10px]">
                     Trigger: <span className="font-mono text-blue-300">{h.trigger_event}</span> | Actor: {h.actor_type}

@@ -108,8 +108,8 @@ class PricingService
 
         if (!$matchedBand) {
             // Default fallback if age exceeds 120
-            $matchedBandKey = '76_plus';
-            $matchedBand = $ageBands['76_plus'] ?? ['label' => '76+', 'multiplier' => '2.50'];
+            $matchedBandKey = '71_plus';
+            $matchedBand = $ageBands['71_plus'] ?? ['label' => '71+', 'multiplier' => '2.00'];
         }
 
         $ageMultiplier = (string) $matchedBand['multiplier'];
