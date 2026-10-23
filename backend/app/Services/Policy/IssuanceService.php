@@ -202,6 +202,10 @@ class IssuanceService
      */
     public function reconcile(PolicyRequest $policy): PolicyRequest
     {
+        if ($policy->status === PolicyStateService::ISSUED) {
+            return $policy;
+        }
+
         if ($policy->status !== PolicyStateService::NEEDS_RECONCILIATION) {
             throw new RuntimeException(
                 "Cannot reconcile policy in status '{$policy->status}'. Expected NEEDS_RECONCILIATION."

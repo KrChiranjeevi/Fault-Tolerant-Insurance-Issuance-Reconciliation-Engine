@@ -357,4 +357,44 @@ class PolicyIssuanceTest extends TestCase
     {
         $this->postJson('/api/mock-insurer/callback', [])->assertStatus(422);
     }
+
+    // ── 19. Reliability: Repeated reconciliation on already-ISSUED is idempotent ──
+
+    public function test_reconciliation_is_idempotent_when_already_issued(): void
+    {
+        $policy = $this->postJson('/api/policy-requests', $this->validPayload())->json('data');
+
+        // Submit with TIMEOUT_AFTER_ISSUE
+        $this->postJson("/api/policy-requests/{$policy['id']}/submit", [
+            'mock_scenario' => MockInsurerService::SCENARIO_TIMEOUT_AFTER_ISSUE,
+        ])->assertStatus(200)->assertJsonPath('data.status', PolicyStateService::NEEDS_RECONCILIATION);
+
+        // First reconcile: reconciles to ISSUED
+        $r1 = $this->postJson("/api/policy-requests/{$policy['id']}/reconcile");
+        $r1->assertStatus(200)->assertJsonPath('data.status', PolicyStateService::ISSUED);
+
+        // Second reconcile: idempotent, returns 200 with ISSUED, does not fail or duplicate
+        $r2 = $this->postJson("/api/policy-requests/{$policy['id']}/reconcile");
+        $r2->assertStatus(200)->assertJsonPath('data.status', PolicyStateService::ISSUED);
+    }
+
+    // ── 20. Reliability: Duplicate intake preserves original immutable premium ──
+
+    public function test_duplicate_intake_preserves_original_immutable_record(): void
+    {
+        $originalPayload = $this->validPayload();
+        $res1 = $this->postJson('/api/policy-requests', $originalPayload);
+        $res1->assertStatus(201);
+        $originalId = $res1->json('data.id');
+        $originalPremium = $res1->json('data.premium_amount');
+
+        // Repeated intake with identical agent_id and client_request_id
+        $res2 = $this->postJson('/api/policy-requests', $originalPayload);
+        $res2->assertStatus(200)
+            ->assertJsonPath('data.id', $originalId)
+            ->assertJsonPath('data.premium_amount', $originalPremium);
+
+        // Verify exactly 1 policy_requests record exists
+        $this->assertDatabaseCount('policy_requests', 1);
+    }
 }
