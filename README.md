@@ -57,7 +57,7 @@ flowchart TD
   * **Controllers**: `PolicyRequestController`, `MockInsurerCallbackController`
   * **Domain Services**: `PricingService`, `PolicyService`, `PolicyStateService`, `IssuanceService`, `MockInsurerService`
   * **Models**: `PolicyRequest`, `IssuanceAttempt`, `ProviderEvent`, `PolicyStateHistory`
-  * **Automated Tests**: 43 unit and feature test cases with 164 assertions.
+  * **Automated Tests**: 44 unit and feature test cases with 167 assertions.
 * **`frontend/`**: React 18 + Vite + Tailwind CSS Operations Dashboard
   * Real-time metrics overview, responsive policy intake form with live quote preview, sortable and filterable policy repository table, and comprehensive policy lifecycle inspection modal.
 
@@ -188,14 +188,15 @@ npm run dev
 ```json
 {
   "client_request_id": "REQ-2026-X892",
-  "agent_id": "AGT-001",
-  "customer_name": "Jane Doe",
-  "date_of_birth": "1994-05-20",
-  "destination": "SCHENGEN",
-  "trip_start": "2026-11-01",
-  "trip_end": "2026-11-10",
-  "plan_code": "GOLD",
-  "sum_insured": 100000
+  "agent_id": "AGENT-17",
+  "customer_name": "Sample Customer",
+  "date_of_birth": "1998-04-10",
+  "destination": "INTERNATIONAL",
+  "trip_start": "2026-11-10",
+  "trip_end": "2026-11-14",
+  "plan_code": "PLUS",
+  "sum_insured": 300000,
+  "currency": "INR"
 }
 ```
 
@@ -205,30 +206,53 @@ npm run dev
   "data": {
     "id": 1,
     "client_request_id": "REQ-2026-X892",
-    "agent_id": "AGT-001",
+    "agent_id": "AGENT-17",
     "policy_number": "POL-20261024-8F3A12",
     "status": "RECEIVED",
-    "customer_name": "Jane Doe",
-    "date_of_birth": "1994-05-20",
-    "destination": "SCHENGEN",
-    "trip_start": "2026-11-01",
-    "trip_end": "2026-11-10",
-    "plan_code": "GOLD",
-    "sum_insured": 100000,
-    "premium_amount": "359.38",
-    "currency": "USD",
+    "customer_name": "Sample Customer",
+    "insured_name": "Sample Customer",
+    "date_of_birth": "1998-04-10",
+    "traveler_age": 28,
+    "destination": "INTERNATIONAL",
+    "trip_start": "2026-11-10",
+    "trip_end": "2026-11-14",
+    "trip_days": 5,
+    "plan_code": "PLUS",
+    "plan": "PLUS",
+    "sum_insured": 300000,
+    "coverage_type": "300000",
+    "premium_amount": "225.00",
+    "currency": "INR",
     "premium_snapshot": {
+      "version": "1.0.0",
+      "calculation_id": "calc_7c0e8620-3351-40be-bd36-54a85faad001",
       "calculated_at": "2026-10-24T00:00:00Z",
-      "trip_days": 10,
-      "age_at_trip_start": 32,
-      "base_daily_rate": "25.00",
-      "age_multiplier": "1.25",
-      "destination_multiplier": "1.25",
-      "coverage_multiplier": "1.15",
-      "currency": "USD",
-      "calculated_premium": "359.38"
+      "currency": "INR",
+      "traveler_age": 28,
+      "age_band": "18-60",
+      "trip_days": 5,
+      "pricing_inputs": {
+        "plan": "PLUS",
+        "destination": "INTERNATIONAL",
+        "coverage_type": "300000",
+        "date_of_birth": "1998-04-10",
+        "trip_start": "2026-11-10",
+        "trip_end": "2026-11-14"
+      },
+      "rates_and_multipliers": {
+        "base_daily_rate": "20.00",
+        "destination_multiplier": "1.80",
+        "coverage_multiplier": "1.25",
+        "age_multiplier": "1.00"
+      },
+      "breakdown": {
+        "daily_premium": "45.00",
+        "total_amount": "225.00"
+      },
+      "amount": "225.00"
     },
-    "created_at": "2026-10-24T00:00:00Z"
+    "created_at": "2026-10-24T00:00:00Z",
+    "updated_at": "2026-10-24T00:00:00Z"
   }
 }
 ```
@@ -309,39 +333,37 @@ $$\text{Premium} = \text{round}\Big(\text{Base Daily Rate} \times \text{Trip Day
 * **Traveler Age**: Age calculated at `trip_start` date.
 * **Precision**: Decimal-safe calculations avoiding IEEE 754 binary floating-point drift. Results stored in decimal(10,2) columns and locked into an immutable JSON snapshot.
 
-### Rate Matrices
+### Rate Matrices (Assignment Specifications)
 
 #### 1. Plan Base Daily Rates
-| Plan Code | Base Daily Rate (USD) |
-|---|---|
-| `SILVER` | $15.00 |
-| `GOLD` | $25.00 |
-| `PLATINUM` | $40.00 |
+| Plan Code | Plan Name | Base Daily Rate (INR) |
+|---|---|---|
+| `BASIC` | Basic Protection | ₹12.00 / day |
+| `PLUS` | Plus Protection | ₹20.00 / day |
+| `PREMIUM` | Premium Protection | ₹30.00 / day |
 
 #### 2. Age Multipliers
-| Age Band | Multiplier |
-|---|---|
-| 0 – 29 years | 1.00x |
-| 30 – 49 years | 1.25x |
-| 50 – 69 years | 1.50x |
-| 70+ years | 2.00x |
+| Age Band | Multiplier | Description |
+|---|---|---|
+| 0 – 17 years | 1.10x | Child / Minor cover |
+| 18 – 60 years | 1.00x | Standard adult base |
+| 61 – 70 years | 1.50x | Senior traveler |
+| 71+ years | 2.00x | Super senior traveler |
 
 #### 3. Destination Multipliers
-| Destination Code | Region Name | Multiplier |
+| Destination Code | Destination Region | Multiplier |
 |---|---|---|
-| `ASIA` | Asia Pacific | 1.00x |
-| `EUROPE` | Non-Schengen Europe | 1.20x |
-| `SCHENGEN` | European Schengen Area | 1.25x |
-| `USA_CANADA` | United States & Canada | 1.50x |
-| `WORLDWIDE` | Worldwide (All Destinations) | 1.60x |
+| `DOMESTIC` | Domestic Travel | 1.00x |
+| `INTERNATIONAL` | International Travel | 1.80x |
 
-#### 4. Coverage Multipliers
-| Sum Insured (USD) | Coverage Multiplier |
+*(Additional legacy routes `ASIA` (1.20x), `EUROPE` (1.50x), `SCHENGEN` (1.25x), `USA_CANADA` (1.50x), `WORLDWIDE` (2.00x) are supported for backward compatibility).*
+
+#### 4. Sum Insured & Coverage Multipliers
+| Sum Insured (INR) | Coverage Multiplier |
 |---|---|
-| $50,000 | 1.00x |
-| $100,000 | 1.15x |
-| $250,000 | 1.30x |
-| $500,000 | 1.50x |
+| ₹100,000 (₹1 Lakh) | 1.00x |
+| ₹300,000 (₹3 Lakhs) | 1.25x |
+| ₹500,000 (₹5 Lakhs) | 1.50x |
 
 ---
 
@@ -446,14 +468,14 @@ php artisan test
 
 #### Test Suite Breakdown:
 * **`PricingServiceTest` (11 tests)**:
-  * Accurate calculation snapshot across all age bands (<30, 30-49, 50-69, 70+).
+  * Accurate calculation snapshot across all 4 docx age bands (0-17, 18-60, 61-70, 71+).
   * Single-day trips (same start and end date = 1 inclusive day).
   * Inclusive day counting edge cases.
   * Age calculation anchored at `trip_start`.
   * Exception throwing on unsupported plans, destinations, and coverage tiers.
   * Validation exceptions on inverted trip dates and future DOBs.
-  * Decimal-safe arithmetic precision verification.
-* **`PolicyIssuanceTest` (20 tests)**:
+  * Decimal-safe BCMath arithmetic precision verification.
+* **`PolicyIssuanceTest` (21 tests)**:
   * Idempotent intake returning 201 on create and 200 on repeated call.
   * 422 responses on schema violations and inverted dates.
   * Paginated listing and status filtering.
@@ -466,6 +488,7 @@ php artisan test
   * Timeout reconciliation recovery flow without duplicate policy creation.
   * State machine illegal transition prevention.
   * Re-entry idempotency on `/reconcile`.
+  * Assignment document exact example intake and calculation verification.
 * **`PolicyModelAndDatabaseTest` (6 tests)**:
   * Transactional creation and state history persistence.
   * Database uniqueness constraint on `(agent_id, client_request_id)`.
@@ -478,7 +501,7 @@ php artisan test
   * Liveness probe on `/api/status`.
   * CORS headers validation for `http://localhost:5173`.
 
-**Overall Test Results: 43 passed (164 assertions) in ~1.88 seconds.**
+**Overall Test Results: 44 passed (167 assertions) with 100% success.**
 
 ### Running Frontend Production Build
 ```bash

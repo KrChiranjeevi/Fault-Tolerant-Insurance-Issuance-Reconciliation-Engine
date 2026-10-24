@@ -67,6 +67,21 @@ During development, several real errors and architectural gaps occurred in the A
   ```
   This ensures subsequent reconciliation requests safely return the existing `ISSUED` policy with HTTP 200 without duplicate provider events or state mutations.
 
+### 4. Windows IPv6 Loopback Resolution Hang
+* **What Happened**: The AI configured the frontend with `VITE_API_BASE_URL=http://localhost:8000/api`. On Windows 11, Chromium browsers resolve `localhost` to IPv6 `::1` first, whereas `php artisan serve` binds strictly to IPv4 `127.0.0.1:8000`. This caused browser fetches to hang in "Checking..." / "Loading policies from server..." state until TCP connection timeouts occurred.
+* **How It Was Caught**: Browser subagent inspection revealed requests to `http://localhost:8000/api` stalling while direct curl requests to `http://127.0.0.1:8000/api` succeeded immediately.
+* **Correction Made**: Added a reverse proxy in `vite.config.ts` mapping `/api` to `http://127.0.0.1:8000`, set `VITE_API_BASE_URL=/api`, and refactored `api.ts` to build relative URLs safely against `window.location.origin` with 15-second abort timeouts.
+
+### 5. Placeholder Options vs. Assignment Docx Specifications
+* **What Happened**: The AI initially scaffolded the UI with placeholder options (`SILVER`, `GOLD`, `PLATINUM`, `SCHENGEN`, and USD currency `$`) rather than the exact assignment specifications from `TrippersShield.docx`.
+* **How It Was Caught**: Comparing the running frontend dropdowns against the assignment requirements document revealed discrepancies in plan codes, destinations, sum-insured tiers, and currency symbols.
+* **Correction Made**: Updated `config/pricing.php` and the React frontend components (`PolicyForm.tsx`, `PolicyTable.tsx`, `PolicyDetailsModal.tsx`) to strictly use:
+  * Plan Codes: `BASIC` (₹12/day), `PLUS` (₹20/day), `PREMIUM` (₹30/day)
+  * Destinations: `DOMESTIC` (1.00x), `INTERNATIONAL` (1.80x)
+  * Sum Insured: ₹100,000 (1.00x), ₹300,000 (1.25x), ₹500,000 (1.50x)
+  * Currency: Indian Rupee (`₹` / `INR`)
+  * Age Tiers: 0–17 (1.10x), 18–60 (1.00x), 61–70 (1.50x), 71+ (2.00x)
+
 ---
 
 ## 🔍 How Work Was Verified
@@ -74,7 +89,8 @@ During development, several real errors and architectural gaps occurred in the A
 All AI-generated and refactored code was rigorously verified using a combination of automated test suites, static type checking, and manual review:
 
 1. **Automated Backend Testing**:
-   * Executed `php artisan test` across all 43 tests (164 assertions) verifying decimal-safe pricing, state machine transitions, unique constraint integrity, mock insurer scenarios, and edge cases. 100% test pass achieved.
+   * Executed `php artisan test` across all 44 tests (167 assertions) verifying decimal-safe pricing, state machine transitions, unique constraint integrity, mock insurer scenarios, and edge cases. 100% test pass achieved.
+   * Executed `PolicyModelAndDatabaseTest` directly against MySQL (`policyflow_test` on port 3307) verifying real MySQL uniqueness constraints and transaction rollbacks.
 2. **Frontend Type Checking & Bundle Compilation**:
    * Executed `npm run build` (`tsc -b && vite build`) verifying TypeScript strict typing across all interfaces, components, and API service functions with zero compilation errors.
 3. **Database Integrity & Security Review**:
